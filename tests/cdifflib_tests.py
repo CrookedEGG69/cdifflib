@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import random
-import unittest
+import pytest
 
 import os
 import sys
@@ -52,93 +52,92 @@ def generate_similar_streams(nlines, ndiffs):
     return orig, lines
 
 
-class CDiffLibTestCase(unittest.TestCase):
-    def assertNearlyEqual(self, x, y):
-        """Simple test to make sure floats are close"""
-        self.assertTrue(abs(x - y) < 1e-5)
+def assertNearlyEqual(x, y):
+    """Simple test to make sure floats are close"""
+    assert abs(x - y) < 1e-5
 
-    def setUp(self):
-        random.seed(1234)
-        streama, streamb = generate_similar_streams(2000, 200)
-        self.streama = streama
-        self.streamb = streamb
+@pytest.fixture()
+def test_streams():
+    random.seed(1234)
+    streama, streamb = generate_similar_streams(2000, 200)
+    yield streama, streamb
 
-    def testCDifflibVsDifflibRandom(self):
-        """Test cdifflib gets same answer as difflib on semi-random sequence of lines"""
-        cdiff = linecount(CSequenceMatcher, self.streama, self.streamb)
-        diff = linecount(SequenceMatcher, self.streama, self.streamb)
-        self.assertTrue(cdiff != 0)
-        self.assertEqual(cdiff, diff)
+def testCDifflibVsDifflibRandom(test_streams):
+    """Test cdifflib gets same answer as difflib on semi-random sequence of lines"""
+    cdiff = linecount(CSequenceMatcher, test_streams[0], test_streams[1])
+    diff = linecount(SequenceMatcher, test_streams[0], test_streams[1])
+    assert cdiff != 0
+    assert cdiff == diff
 
-    def testCDifflibVsDifflibIdentical(self):
-        """Test cdifflib gets 0 difference on the same sequence of lines"""
-        cdiff = linecount(CSequenceMatcher, self.streama, self.streama)
-        self.assertEqual(cdiff, 0)
-        cdiff = linecount(CSequenceMatcher, self.streamb, self.streamb)
-        self.assertEqual(cdiff, 0)
+def testCDifflibVsDifflibIdentical(test_streams):
+    """Test cdifflib gets 0 difference on the same sequence of lines"""
+    cdiff = linecount(CSequenceMatcher, test_streams[0], test_streams[0])
+    assert cdiff == 0
+    cdiff = linecount(CSequenceMatcher, test_streams[1], test_streams[1])
+    assert cdiff == 0
 
-    def testCDifflibWithEmptyInput(self):
-        """Test cdifflib gets correct difference vs empty stream"""
-        cdiff = linecount(CSequenceMatcher, [], [])
-        self.assertEqual(cdiff, 0)
-        cdiff = linecount(CSequenceMatcher, self.streama, [])
-        self.assertEqual(cdiff, len(self.streama))
-        cdiff = linecount(CSequenceMatcher, [], self.streamb)
-        self.assertEqual(cdiff, len(self.streamb))
+def testCDifflibWithEmptyInput(test_streams):
+    """Test cdifflib gets correct difference vs empty stream"""
+    cdiff = linecount(CSequenceMatcher, [], [])
+    assert cdiff == 0
+    cdiff = linecount(CSequenceMatcher, test_streams[0], [])
+    assert cdiff == len(test_streams[0])
+    cdiff = linecount(CSequenceMatcher, [], test_streams[1])
+    assert cdiff == len(test_streams[1])
 
-    def testCDifflibWithBadTypes(self):
-        """Check cdifflib raises the same type complaints as difflib"""
-        self.assertRaises(TypeError, linecount,
-                          CSequenceMatcher, None, self.streamb)
-        self.assertRaises(TypeError, linecount,
-                          SequenceMatcher, None, self.streamb)
-        self.assertRaises(TypeError, linecount,
-                          CSequenceMatcher, self.streama, 1)
-        self.assertRaises(TypeError, linecount,
-                          SequenceMatcher, self.streama, 1)
-        self.assertRaises(TypeError, linecount,
-                          SequenceMatcher, self.streama, [{}, {}])
-        self.assertRaises(TypeError, linecount,
-                          SequenceMatcher, [set([])], [1])
+def testCDifflibWithBadTypes(test_streams):
+    """Check cdifflib raises the same type complaints as difflib"""
+    with pytest.raises(TypeError):
+        linecount(CSequenceMatcher, None, test_streams[1])
+    with pytest.raises(TypeError):
+        linecount(SequenceMatcher, None, test_streams[1])
+    with pytest.raises(TypeError):
+        linecount(CSequenceMatcher, test_streams[0], 1)
+    with pytest.raises(TypeError):
+        linecount(SequenceMatcher, test_streams[0], 1)
+    with pytest.raises(TypeError):
+        linecount(SequenceMatcher, test_streams[0], [{}, {}])
+    with pytest.raises(TypeError):
+        linecount(SequenceMatcher, [set([])], [1])
 
-    def testCDifflibWithNonLists(self):
-        """Check cdifflib handles non-list types the same as difflib"""
-        cdiff = linecount(CSequenceMatcher, "not a list", "also not a list")
-        diff = linecount(SequenceMatcher, "not a list", "also not a list")
-        self.assertEqual(diff, cdiff)
-        self.assertEqual(cdiff, 5)
+def testCDifflibWithNonLists(test_streams):
+    """Check cdifflib handles non-list types the same as difflib"""
+    cdiff = linecount(CSequenceMatcher, "not a list", "also not a list")
+    diff = linecount(SequenceMatcher, "not a list", "also not a list")
+    assert diff == cdiff
+    assert cdiff == 5
 
-        def gena():
-            for x in self.streama:
-                yield x
+    def gena():
+        for x in test_streams[0]:
+            yield x
 
-        def genb():
-            for x in self.streamb:
-                yield x
+    def genb():
+        for x in test_streams[1]:
+            yield x
 
-        cdiff = linecount(CSequenceMatcher, gena(), genb())
-        # actually difflib doesn't handle generators, just check cdiff result.
-        self.assertGreater(cdiff, 0)
+    cdiff = linecount(CSequenceMatcher, gena(), genb())
+    # actually difflib doesn't handle generators, just check cdiff result.
+    assert cdiff > 0
 
-    def testCDifflibWithBug5Data(self):
-        """Check cdifflib returns the same result for bug #5
-           (autojunk handling issues)"""
-        from . import testdata
+def testCDifflibWithBug5Data():
+    """Check cdifflib returns the same result for bug #5
+       (autojunk handling issues)"""
+    import testdata
 
-        # note: convert both to lists for Python 3.3
-        sm = SequenceMatcher(None, testdata.a5, testdata.b5)
-        difflib_matches = list(sm.get_matching_blocks())
+    # note: convert both to lists for Python 3.3
+    sm = SequenceMatcher(None, testdata.a5, testdata.b5)
+    difflib_matches = list(sm.get_matching_blocks())
 
-        sm = CSequenceMatcher(None, testdata.a5, testdata.b5)
-        cdifflib_matches = list(sm.get_matching_blocks())
+    sm = CSequenceMatcher(None, testdata.a5, testdata.b5)
+    cdifflib_matches = list(sm.get_matching_blocks())
 
-        self.assertEqual(difflib_matches, cdifflib_matches)
+    assert difflib_matches == cdifflib_matches
 
-    def testSeq1ResetsCorrectly(self):
-        s = CSequenceMatcher(None, "abcd", "bcde")
-        self.assertNearlyEqual(s.ratio(), 0.75);
-        s.set_seq1("bcde")
-        self.assertNearlyEqual(s.ratio(), 1.0);
+def testSeq1ResetsCorrectly():
+    s = CSequenceMatcher(None, "abcd", "bcde")
+    assertNearlyEqual(s.ratio(), 0.75);
+    s.set_seq1("bcde")
+    assertNearlyEqual(s.ratio(), 1.0);
 
 def main():
     from optparse import OptionParser

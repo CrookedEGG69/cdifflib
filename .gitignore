@@ -1,6 +1,8 @@
 CDiffLib.egg-info
 *.pyc
-_cdifflib.so
+_cdifflib*.so
 build/
 dist/
 wheelhouse/
+venv/
+.pypirc
