@@ -95,7 +95,7 @@ _find_longest_match_worker(
                     int k = 1;
 
                     jint = PyList_GET_ITEM(oj, oji);
-                    assert(PyInt_CheckExact(jint));
+                    assert(PyLong_CheckExact(jint));
                     j = (int)PyLong_AsLong(jint);
 
                     if (j < blo)
