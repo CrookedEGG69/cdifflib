@@ -51,14 +51,20 @@ library_that_uses_difflib.do_some_diffing()
 
 Making
 ------
+Set up a venv:
+```
+python -m venv .venv
+source .venv/bin/activate
+```
+
 To install:
 ```
-python setup.py install
+python -m build
 ```
 
 To test:
 ```
-python setup.py test
+python -m pytest tests/cdifflib_tests.py
 ```
 
 License etc
