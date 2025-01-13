@@ -30,4 +30,4 @@ makedist:
 	twine check dist/*
 
 upload:
-	twine upload --repository cdifflib dist/*
+	twine upload dist/*
