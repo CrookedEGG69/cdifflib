@@ -9,7 +9,7 @@ Class CSequenceMatcher:
 
 __all__ = ["CSequenceMatcher", "__version__"]
 
-__version__ = "1.2.6"
+__version__ = "1.2.9"
 
 import sys
 from difflib import SequenceMatcher as _SequenceMatcher

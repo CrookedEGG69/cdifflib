@@ -51,20 +51,21 @@ library_that_uses_difflib.do_some_diffing()
 
 Making
 ------
-Set up a venv:
+Set up dev environment:
 ```
-python -m venv .venv
+make venv
 source .venv/bin/activate
 ```
 
-To install:
+To build/install into the venv:
 ```
-python -m build
+make build
+make install
 ```
 
 To test:
 ```
-python -m pytest tests/cdifflib_tests.py
+make test
 ```
 
 License etc
@@ -74,7 +75,9 @@ This code lives at https://github.com/mduggan.  See LICENSE for the license.
 
 Changelog
 ---------
-* 1.2.7 - Update for newer pythons
+* 1.2.9 - Repackage again, no code change (#13)
+* 1.2.8 - Bump to fix version number in py file, no code change
+* 1.2.7 - Update for newer pythons (#12)
 * 1.2.6 - Clear state correctly when replacing seq1 (#10)
 * 1.2.5 - Fix some memory leaks (#7)
 * 1.2.4 - Repackage yet again using twine for pypi upload (no binary changes)
